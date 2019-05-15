@@ -7,6 +7,7 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 import android.R.layout.simple_list_item_1
+import android.content.Intent
 import android.util.Log
 import com.gmail.hadihammurabi.workshoprecyclerview.models.Kota
 import com.gmail.hadihammurabi.workshoprecyclerview.models.KotaAPI
@@ -32,7 +33,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun getKota() {
-        var kotas: List<Kota>? = listOf()
+        var kotas: List<Kota> = listOf()
         api.getKota()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -40,13 +41,15 @@ class MainActivity : AppCompatActivity() {
                 { result ->
                     kotas = result.kota
 
-                    val kotastring: List<String>? = kotas?.map { kota -> kota.nama }
+//                    val kotastring: List<String> = kotas.map { kota -> kota.nama }
 
-                    listview.adapter = ArrayAdapter(this, simple_list_item_1, kotastring)
+                    listview.adapter = KotaListAdapter(this, kotas)
 
                     listview.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                        Toast.makeText(applicationContext, "Anda memilih ${kotastring!![position]}", Toast.LENGTH_SHORT)
-                            .show()
+                        val intent = Intent(applicationContext, jadwal_detail::class.java)
+                        intent.putExtra("kota_id", kotas[position].id)
+                        intent.putExtra("kota_nama", kotas[position].nama)
+                        startActivity(intent)
                     }
                 },
                 { error -> Log.e("ERROR", error.message) }
