@@ -7,18 +7,50 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 import android.R.layout.simple_list_item_1
+import android.util.Log
+import com.gmail.hadihammurabi.workshoprecyclerview.models.Kota
+import com.gmail.hadihammurabi.workshoprecyclerview.models.KotaAPI
+import io.reactivex.Scheduler
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+import retrofit2.Retrofit
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
+import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
+    val api = Retrofit.Builder()
+        .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+        .addConverterFactory(GsonConverterFactory.create())
+        .baseUrl("https://api.banghasan.com/sholat/format/json/")
+        .build().create(API::class.java)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val languages = listOf("Javascript", "Python", "PHP", "Ruby")
-        listview.adapter = ArrayAdapter(this, simple_list_item_1, languages)
-
-        listview.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-            Toast.makeText(applicationContext, "Anda memilih ${languages[position]}", Toast.LENGTH_SHORT).show()
-        }
+        getKota()
     }
+
+    fun getKota() {
+        var kotas: List<Kota>? = listOf()
+        api.getKota()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { result ->
+                    kotas = result.kota
+
+                    val kotastring: List<String>? = kotas?.map { kota -> kota.nama }
+
+                    listview.adapter = ArrayAdapter(this, simple_list_item_1, kotastring)
+
+                    listview.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+                        Toast.makeText(applicationContext, "Anda memilih ${kotastring!![position]}", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                },
+                { error -> Log.e("ERROR", error.message) }
+            )
+    }
+
 }
